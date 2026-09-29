@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
@@ -22,17 +22,31 @@ async function getDb() {
   return cached;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "CHANGE_ME_IN_VERCEL";
 const COOKIE_NAME = "obra_admin";
 
+function jwtSecret() {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    throw new Error("JWT_SECRET must be configured with at least 32 characters");
+  }
+  return process.env.JWT_SECRET;
+}
+
+function asyncHandler(handler) {
+  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+}
+
+function categoryView(category) {
+  return { ...category, id: String(category._id) };
+}
+
 function issueToken(user) {
-  return jwt.sign({ sub: String(user._id), username: user.username }, JWT_SECRET, { expiresIn: "8h" });
+  return jwt.sign({ sub: String(user._id), username: user.username }, jwtSecret(), { expiresIn: "8h" });
 }
 
 function setAuthCookie(res, token) {
   res.setHeader("Set-Cookie", serialize(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 8
@@ -41,16 +55,19 @@ function setAuthCookie(res, token) {
 
 function clearAuthCookie(res) {
   res.setHeader("Set-Cookie", serialize(COOKIE_NAME, "", {
-    httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 0
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0
   }));
 }
 
 async function requireAuth(req, res, next) {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    return res.status(503).json({ error: "JWT_SECRET must be configured with at least 32 characters" });
+  }
   try {
     const cookies = parse(req.headers.cookie || "");
     const token = cookies[COOKIE_NAME];
     if (!token) return res.status(401).json({ error: "Unauthorized" });
-    req.user = jwt.verify(token, JWT_SECRET);
+    req.user = jwt.verify(token, jwtSecret());
     next();
   } catch {
     return res.status(401).json({ error: "Unauthorized" });
@@ -76,11 +93,11 @@ async function seedCategories(db) {
   const categories = db.collection("categories");
   if (await categories.countDocuments() > 0) return;
   await categories.insertMany([
-    { name:"Cookware", description:"Kadhai, cooker, pans and cooking essentials", icon:"🍳", created_at:new Date() },
-    { name:"Dinnerware", description:"Plates, bowls, katoris and serving items", icon:"🍽️", created_at:new Date() },
-    { name:"Glass & Cups", description:"Glass, cup, mug and drinkware collection", icon:"🥛", created_at:new Date() },
-    { name:"Buckets & Household", description:"Buckets, tubs and household utility items", icon:"🪣", created_at:new Date() },
-    { name:"Kitchen Essentials", description:"Everyday kitchen and household essentials", icon:"🏠", created_at:new Date() }
+    { name:"Cookware", description:"Kadhai, cooker, pans and cooking essentials", icon:"\uD83C\uDF73", created_at:new Date() },
+    { name:"Dinnerware", description:"Plates, bowls, katoris and serving items", icon:"\uD83C\uDF7D\uFE0F", created_at:new Date() },
+    { name:"Glass & Cups", description:"Glass, cup, mug and drinkware collection", icon:"\uD83E\uDD5B", created_at:new Date() },
+    { name:"Buckets & Household", description:"Buckets, tubs and household utility items", icon:"\uD83E\uDEE3", created_at:new Date() },
+    { name:"Kitchen Essentials", description:"Everyday kitchen and household essentials", icon:"\uD83C\uDFE0", created_at:new Date() }
   ]);
 }
 
@@ -95,7 +112,7 @@ function validId(id) {
   return ObjectId.isValid(id);
 }
 
-app.get("/api/store", async (req, res) => {
+app.get("/api/store", asyncHandler(async (req, res) => {
   try {
     const db = await initDb();
     const categories = await db.collection("categories").find({}).sort({name:1}).toArray();
@@ -112,22 +129,22 @@ app.get("/api/store", async (req, res) => {
         phone:"+91 00000 00000",
         tagline:"Quality utensils for every home"
       },
-      categories,
+      categories: categories.map(categoryView),
       products: products.map(p => ({
         ...p,
         id:String(p._id),
         category_id:String(p.category_id),
         category_name:catMap[String(p.category_id)]?.name || "Uncategorized",
-        category_icon:catMap[String(p.category_id)]?.icon || "🍽️"
+        category_icon:catMap[String(p.category_id)]?.icon || "\uD83C\uDF7D\uFE0F"
       }))
     });
   } catch (e) {
     console.error(e);
     res.status(500).json({error:"Database error"});
   }
-});
+}));
 
-app.post("/api/admin/login", async (req,res) => {
+app.post("/api/admin/login", asyncHandler(async (req,res) => {
   try {
     const db=await initDb();
     const {username,password}=req.body;
@@ -136,8 +153,8 @@ app.post("/api/admin/login", async (req,res) => {
       return res.status(401).json({error:"Invalid username or password"});
     setAuthCookie(res,issueToken(admin));
     res.json({success:true,username:admin.username});
-  } catch(e) { console.error(e); res.status(500).json({error:"Login failed"}); }
-});
+  } catch(e) { console.error(e); res.status(500).json({error:e.message.includes("JWT_SECRET") ? e.message : "Login failed"}); }
+}));
 
 app.post("/api/admin/logout", requireAuth, (req,res)=>{
   clearAuthCookie(res);
@@ -148,7 +165,7 @@ app.get("/api/admin/me", requireAuth, (req,res)=>{
   res.json({authenticated:true,username:req.user.username});
 });
 
-app.get("/api/admin/dashboard", requireAuth, async (req,res)=>{
+app.get("/api/admin/dashboard", requireAuth, asyncHandler(async (req,res)=>{
   const db=await initDb();
   const [products,categories,visible,featured]=await Promise.all([
     db.collection("products").countDocuments(),
@@ -157,47 +174,52 @@ app.get("/api/admin/dashboard", requireAuth, async (req,res)=>{
     db.collection("products").countDocuments({featured:true})
   ]);
   res.json({products,categories,visible,featured});
-});
+}));
 
-app.get("/api/admin/categories", requireAuth, async (req,res)=>{
+app.get("/api/admin/categories", requireAuth, asyncHandler(async (req,res)=>{
   const db=await initDb();
-  res.json(await db.collection("categories").find({}).sort({name:1}).toArray());
-});
+  const categories=await db.collection("categories").find({}).sort({name:1}).toArray();
+  res.json(categories.map(categoryView));
+}));
 
-app.post("/api/admin/categories", requireAuth, async (req,res)=>{
+app.post("/api/admin/categories", requireAuth, asyncHandler(async (req,res)=>{
   const db=await initDb();
   const {name,description,icon}=req.body;
   if(!name?.trim()) return res.status(400).json({error:"Category name is required"});
   try {
     const result=await db.collection("categories").insertOne({
-      name:name.trim(),description:description||"",icon:icon||"🍽️",created_at:new Date()
+      name:name.trim(),description:description||"",icon:icon||"\uD83C\uDF7D\uFE0F",created_at:new Date()
     });
     res.json({id:String(result.insertedId)});
-  } catch { res.status(400).json({error:"Category already exists"}); }
-});
+  } catch (error) {
+    if (error.code === 11000) return res.status(400).json({error:"Category already exists"});
+    throw error;
+  }
+}));
 
-app.put("/api/admin/categories/:id", requireAuth, async (req,res)=>{
+app.put("/api/admin/categories/:id", requireAuth, asyncHandler(async (req,res)=>{
   if(!validId(req.params.id)) return res.status(400).json({error:"Invalid category id"});
   const db=await initDb();
   const {name,description,icon}=req.body;
   if(!name?.trim()) return res.status(400).json({error:"Category name is required"});
-  await db.collection("categories").updateOne(
+  const result=await db.collection("categories").updateOne(
     {_id:new ObjectId(req.params.id)},
-    {$set:{name:name.trim(),description:description||"",icon:icon||"🍽️"}}
+    {$set:{name:name.trim(),description:description||"",icon:icon||"\uD83C\uDF7D\uFE0F"}}
   );
+  if(!result.matchedCount) return res.status(404).json({error:"Category not found"});
   res.json({success:true});
-});
+}));
 
-app.delete("/api/admin/categories/:id", requireAuth, async (req,res)=>{
+app.delete("/api/admin/categories/:id", requireAuth, asyncHandler(async (req,res)=>{
   if(!validId(req.params.id)) return res.status(400).json({error:"Invalid category id"});
   const db=await initDb();
   const categoryId=new ObjectId(req.params.id);
   await db.collection("products").deleteMany({category_id:categoryId});
   await db.collection("categories").deleteOne({_id:categoryId});
   res.json({success:true});
-});
+}));
 
-app.get("/api/admin/products", requireAuth, async (req,res)=>{
+app.get("/api/admin/products", requireAuth, asyncHandler(async (req,res)=>{
   const db=await initDb();
   const [products,categories]=await Promise.all([
     db.collection("products").find({}).sort({created_at:-1}).toArray(),
@@ -208,9 +230,9 @@ app.get("/api/admin/products", requireAuth, async (req,res)=>{
     ...p,id:String(p._id),category_id:String(p.category_id),
     category_name:map[String(p.category_id)]?.name||"Uncategorized"
   })));
-});
+}));
 
-app.post("/api/admin/products", requireAuth, async (req,res)=>{
+app.post("/api/admin/products", requireAuth, asyncHandler(async (req,res)=>{
   const db=await initDb();
   const {category_id,name,description,price,unit,image,stock_status,featured,visible}=req.body;
   if(!validId(category_id)||!name?.trim())
@@ -225,9 +247,9 @@ app.post("/api/admin/products", requireAuth, async (req,res)=>{
     created_at:new Date()
   });
   res.json({id:String(result.insertedId)});
-});
+}));
 
-app.put("/api/admin/products/:id", requireAuth, async (req,res)=>{
+app.put("/api/admin/products/:id", requireAuth, asyncHandler(async (req,res)=>{
   if(!validId(req.params.id)) return res.status(400).json({error:"Invalid product id"});
   const db=await initDb();
   const {category_id,name,description,price,unit,image,stock_status,featured,visible}=req.body;
@@ -238,16 +260,17 @@ app.put("/api/admin/products/:id", requireAuth, async (req,res)=>{
     featured:featured==="1"||featured===true,visible:visible!=="0"&&visible!==false
   };
   if(image!==undefined) update.image=image;
-  await db.collection("products").updateOne({_id:new ObjectId(req.params.id)},{$set:update});
+  const result=await db.collection("products").updateOne({_id:new ObjectId(req.params.id)},{$set:update});
+  if(!result.matchedCount) return res.status(404).json({error:"Product not found"});
   res.json({success:true});
-});
+}));
 
-app.delete("/api/admin/products/:id", requireAuth, async (req,res)=>{
+app.delete("/api/admin/products/:id", requireAuth, asyncHandler(async (req,res)=>{
   if(!validId(req.params.id)) return res.status(400).json({error:"Invalid product id"});
   const db=await initDb();
   await db.collection("products").deleteOne({_id:new ObjectId(req.params.id)});
   res.json({success:true});
-});
+}));
 
 // Cloudinary signed upload parameters.
 // The browser uploads the actual image directly to Cloudinary, so Vercel does not store files.
@@ -269,7 +292,8 @@ app.get("/api/admin/cloudinary-signature", requireAuth, (req,res)=>{
 
 app.use((err,req,res,next)=>{
   console.error(err);
-  res.status(500).json({error:"Server error"});
+  if (res.headersSent) return next(err);
+  res.status(500).json({error:process.env.NODE_ENV === "development" ? err.message : "Server error"});
 });
 
 module.exports=app;

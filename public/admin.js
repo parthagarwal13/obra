@@ -78,8 +78,8 @@ async function loadCategories() {
         <div>${escapeHtml(c.description || "—")}</div>
         <div>${new Date(c.created_at).toLocaleDateString()}</div>
         <div class="actions">
-          <button class="icon-btn" onclick="editCategory(${c.id})">Edit</button>
-          <button class="icon-btn" onclick="deleteCategory(${c.id})">Delete</button>
+          <button class="icon-btn" onclick="editCategory('${c.id}')">Edit</button>
+          <button class="icon-btn" onclick="deleteCategory('${c.id}')">Delete</button>
         </div>
       </div>
     `).join("")}
@@ -97,8 +97,8 @@ async function loadProducts() {
         <div>${p.price ? "₹"+Number(p.price).toLocaleString("en-IN") : "On request"}</div>
         <div><span class="status ${p.visible ? "" : "off"}">${p.visible ? "VISIBLE" : "HIDDEN"}</span></div>
         <div class="actions">
-          <button class="icon-btn" onclick="editProduct(${p.id})">Edit</button>
-          <button class="icon-btn" onclick="deleteProduct(${p.id})">Delete</button>
+          <button class="icon-btn" onclick="editProduct('${p.id}')">Edit</button>
+          <button class="icon-btn" onclick="deleteProduct('${p.id}')">Delete</button>
         </div>
       </div>
     `).join("")}
@@ -119,7 +119,7 @@ async function openCategory(id=null) {
     $("cDescription").value="";
   } else {
     const cats = await api("/api/admin/categories");
-    const c = cats.find(x=>x.id===id);
+    const c = cats.find(x=>String(x.id)===String(id));
     $("categoryModalTitle").textContent="Edit Category";
     $("categoryId").value=c.id;
     $("cName").value=c.name;
@@ -171,7 +171,7 @@ async function openProduct(id=null) {
   editingProduct = id;
   $("productError").textContent="";
   const cats = await api("/api/admin/categories");
-  $("pCategory").innerHTML = cats.map(c=>`<option value="${c._id}">${escapeHtml(c.icon)} ${escapeHtml(c.name)}</option>`).join("");
+  $("pCategory").innerHTML = cats.map(c=>`<option value="${c.id}">${escapeHtml(c.icon)} ${escapeHtml(c.name)}</option>`).join("");
 
   if(!id) {
     $("productModalTitle").textContent="Add Product";
@@ -181,7 +181,7 @@ async function openProduct(id=null) {
     $("pFeatured").checked=false; $("pVisible").checked=true; $("pImage").value="";
   } else {
     const products = await api("/api/admin/products");
-    const p = products.find(x=>x.id===id);
+    const p = products.find(x=>String(x.id)===String(id));
     $("productModalTitle").textContent="Edit Product";
     $("productId").value=p.id;
     $("pName").value=p.name; $("pPrice").value=p.price;

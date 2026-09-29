@@ -24,7 +24,7 @@ function renderCategories() {
 
   document.querySelectorAll("[data-cat]").forEach(card => {
     card.addEventListener("click", () => {
-      selectedCategory = Number(card.dataset.cat);
+      selectedCategory = card.dataset.cat;
       renderCategories();
       renderProducts();
       $("catalog").scrollIntoView({ behavior: "smooth" });
@@ -35,12 +35,12 @@ function renderCategories() {
 function renderProducts() {
   const search = $("search").value.trim().toLowerCase();
   let products = store.products.filter(p => {
-    const catOK = !selectedCategory || p.category_id === selectedCategory;
+    const catOK = !selectedCategory || String(p.category_id) === String(selectedCategory);
     const text = `${p.name} ${p.description} ${p.category_name}`.toLowerCase();
     return catOK && (!search || text.includes(search));
   });
 
-  const cat = store.categories.find(c => c.id === selectedCategory);
+  const cat = store.categories.find(c => String(c.id) === String(selectedCategory));
   $("activeCategory").innerHTML = selectedCategory
     ? `Showing: <strong>${escapeHtml(cat?.name || "")}</strong> &nbsp; <button id="clearFilter" style="border:0;background:none;color:inherit;cursor:pointer">Clear ×</button>`
     : "";
@@ -74,7 +74,7 @@ function renderProducts() {
   `).join("");
 
   document.querySelectorAll("[data-product]").forEach(el => {
-    el.addEventListener("click", () => openProduct(Number(el.dataset.product)));
+    el.addEventListener("click", () => openProduct(el.dataset.product));
   });
 
   $("clearFilter")?.addEventListener("click", () => {
@@ -85,7 +85,7 @@ function renderProducts() {
 }
 
 function openProduct(id) {
-  const p = store.products.find(x => x.id === id);
+  const p = store.products.find(x => String(x.id) === String(id));
   if (!p) return;
   $("modalImage").src = p.image || "";
   $("modalImage").alt = p.name;

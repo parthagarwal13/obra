@@ -20,13 +20,15 @@ npm install
 npm start
 ```
 
-For local Express testing, you can use a Vercel dev environment, but the simplest production path is GitHub → Vercel.
+Copy `.env.example` to `.env` and fill in the values before starting the app. Local `npm start` uses the same MongoDB API as Vercel; it does not write catalogue data to the old JSON file.
 
 ## 2. MongoDB Atlas
 
 Create a MongoDB Atlas cluster and database user.
 
 Create a database named `obra_utensils`.
+
+In Atlas Network Access, allow the outbound IPs used by your Vercel functions. Vercel's [Static IP feature](https://vercel.com/kb/guide/can-i-get-a-fixed-ip-address) can provide stable egress IPs when available on your plan; add those IPs to the Atlas allowlist. Avoid `0.0.0.0/0` for production because it allows connections from any IP.
 
 Get your connection string and put it in Vercel as:
 
@@ -76,6 +78,8 @@ Then import the repository into Vercel.
 In Vercel → Project → Settings → Environment Variables, add all variables from `.env.example`.
 
 Redeploy after saving variables.
+
+On the first request, the API creates the admin account from `ADMIN_USERNAME` and `ADMIN_PASSWORD` and seeds the default categories if the collections are empty. Set a strong admin password before the first deployment. Changing those variables later does not overwrite an admin account that already exists.
 
 ## API routes
 
