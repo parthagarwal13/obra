@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obra Utensils & Household</title>
+  <meta name="description" content="Browse utensils, cookware and household essentials from Obra, Sonbhadra.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="top-strip">OBRA • SONBHADRA &nbsp; | &nbsp; QUALITY UTENSILS FOR EVERY HOME</div>
+
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-mark">◈</div>
+      <div>
+        <div class="brand-name">OBRA</div>
+        <div class="brand-sub">UTENSILS & HOUSEHOLD</div>
+      </div>
+    </div>
+    <a class="admin-link" href="/admin.html">Admin Portal ↗</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">EST. OBRA • SONBHADRA</span>
+        <h1>Beautifully made<br><em>for everyday living.</em></h1>
+        <p>Explore our collection of cookware, dinnerware, kitchen essentials and household utility products available at our shop in Obra.</p>
+        <a class="hero-btn" href="#catalog">Explore Collection <span>↓</span></a>
+      </div>
+      <div class="hero-art">
+        <div class="sun"></div>
+        <div class="plate plate-back"></div>
+        <div class="plate plate-front"></div>
+        <div class="bowl"></div>
+        <div class="spoon spoon-a"></div>
+        <div class="spoon spoon-b"></div>
+      </div>
+    </section>
+
+    <section class="categories-section">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">SHOP BY CATEGORY</span>
+          <h2>Find what you need</h2>
+        </div>
+        <span id="categoryCount" class="muted"></span>
+      </div>
+      <div id="categories" class="category-grid"></div>
+    </section>
+
+    <section id="catalog" class="catalog-section">
+      <div class="section-heading catalog-heading">
+        <div>
+          <span class="eyebrow">OUR COLLECTION</span>
+          <h2>Shop the catalogue</h2>
+        </div>
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input id="search" type="search" placeholder="Search cooker, plate, glass...">
+        </div>
+      </div>
+      <div id="activeCategory" class="active-filter"></div>
+      <div id="products" class="product-grid"></div>
+      <div id="empty" class="empty hidden">
+        <div>◌</div>
+        <h3>No products found</h3>
+        <p>Try another search or category.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <div class="footer-brand">OBRA</div>
+      <p>Utensils & Household • Obra, Sonbhadra</p>
+    </div>
+    <div class="footer-right">
+      <p>Visit our shop to see products in person.</p>
+      <p class="copyright">© <span id="year"></span> Obra Utensils & Household</p>
+    </div>
+  </footer>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="close" data-close>×</button>
+      <img id="modalImage" alt="">
+      <div class="modal-info">
+        <span id="modalCategory" class="eyebrow"></span>
+        <h2 id="modalName"></h2>
+        <p id="modalDescription"></p>
+        <div id="modalPrice" class="modal-price"></div>
+        <div id="modalStock" class="stock"></div>
+        <p class="shop-note">Available at our Obra, Sonbhadra shop. Contact the shop for current availability and final price.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

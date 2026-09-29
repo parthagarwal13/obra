@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin • Obra Utensils</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div id="loginView" class="login-page">
+    <div class="login-art">
+      <div class="login-circle"></div>
+      <div class="login-copy">
+        <span>OBRA • SONBHADRA</span>
+        <h1>Manage your<br><em>catalogue.</em></h1>
+        <p>Add products, create categories and keep your shop collection updated from one place.</p>
+      </div>
+    </div>
+    <form id="loginForm" class="login-card">
+      <div class="mini-logo">◈ OBRA</div>
+      <h2>Admin Login</h2>
+      <p>Enter your shop administrator credentials.</p>
+      <label>Username<input id="username" value="admin" required></label>
+      <label>Password<input id="password" type="password" placeholder="Enter password" required></label>
+      <button>Sign in →</button>
+      <div id="loginError" class="error"></div>
+      <a href="/" class="back">← Back to customer site</a>
+    </form>
+  </div>
+
+  <div id="adminView" class="admin-shell hidden">
+    <aside>
+      <div class="side-brand"><b>◈ OBRA</b><small>ADMIN PORTAL</small></div>
+      <nav>
+        <button class="nav active" data-tab="dashboard">▦ <span>Dashboard</span></button>
+        <button class="nav" data-tab="products">◫ <span>Products</span></button>
+        <button class="nav" data-tab="categories">◉ <span>Categories</span></button>
+      </nav>
+      <div class="side-bottom">
+        <a href="/" target="_blank">View Store ↗</a>
+        <button id="logout">Logout</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-top">
+        <div>
+          <span class="eyebrow">OBRA • SONBHADRA</span>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="user-pill">● <span id="adminName">admin</span></div>
+      </header>
+
+      <section id="dashboardTab" class="tab">
+        <div class="stat-grid">
+          <div class="stat"><span>Total Products</span><strong id="sProducts">0</strong><small>in catalogue</small></div>
+          <div class="stat"><span>Categories</span><strong id="sCategories">0</strong><small>shop sections</small></div>
+          <div class="stat"><span>Visible</span><strong id="sVisible">0</strong><small>shown to customers</small></div>
+          <div class="stat"><span>Featured</span><strong id="sFeatured">0</strong><small>highlighted products</small></div>
+        </div>
+        <div class="welcome">
+          <span class="eyebrow">QUICK ACTIONS</span>
+          <h2>Keep your catalogue fresh.</h2>
+          <p>Add new utensils whenever stock arrives. Customers will see visible products instantly on the public website.</p>
+          <div class="quick-actions">
+            <button data-goto="products" class="primary">＋ Add Product</button>
+            <button data-goto="categories" class="secondary">＋ Add Category</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="productsTab" class="tab hidden">
+        <div class="section-bar">
+          <div><h2>Products</h2><p>Add every bartan, cooker, plate, glass, bucket and household item.</p></div>
+          <button id="addProduct" class="primary">＋ Add Product</button>
+        </div>
+        <div id="productsTable" class="table-card"></div>
+      </section>
+
+      <section id="categoriesTab" class="tab hidden">
+        <div class="section-bar">
+          <div><h2>Categories</h2><p>Create your own catalogue sections.</p></div>
+          <button id="addCategory" class="primary">＋ Add Category</button>
+        </div>
+        <div id="categoriesTable" class="table-card"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="productModal" class="overlay hidden">
+    <form id="productForm" class="form-modal" enctype="multipart/form-data">
+      <button type="button" class="x" data-close>×</button>
+      <span class="eyebrow">CATALOGUE ITEM</span>
+      <h2 id="productModalTitle">Add Product</h2>
+      <input type="hidden" id="productId">
+      <div class="form-grid">
+        <label>Product Name *<input id="pName" required placeholder="e.g. Stainless Steel Cooker"></label>
+        <label>Category *<select id="pCategory" required></select></label>
+        <label>Price (₹)<input id="pPrice" type="number" min="0" step="0.01" placeholder="1299"></label>
+        <label>Unit<select id="pUnit"><option>piece</option><option>set</option><option>kg</option><option>dozen</option><option>pair</option></select></label>
+        <label>Stock Status<select id="pStock"><option>In Stock</option><option>Limited Stock</option><option>Out of Stock</option></select></label>
+        <label>Product Image<input id="pImage" type="file" accept="image/*"></label>
+      </div>
+      <label>Description<textarea id="pDescription" rows="4" placeholder="Short product details, material, size, features..."></textarea></label>
+      <div class="checks">
+        <label><input id="pFeatured" type="checkbox"> Featured product</label>
+        <label><input id="pVisible" type="checkbox" checked> Visible on website</label>
+      </div>
+      <div class="form-actions"><button type="button" class="secondary" data-close>Cancel</button><button class="primary">Save Product</button></div>
+      <div id="productError" class="error"></div>
+    </form>
+  </div>
+
+  <div id="categoryModal" class="overlay hidden">
+    <form id="categoryForm" class="form-modal small">
+      <button type="button" class="x" data-close>×</button>
+      <span class="eyebrow">CATALOGUE SECTION</span>
+      <h2 id="categoryModalTitle">Add Category</h2>
+      <input type="hidden" id="categoryId">
+      <label>Category Name *<input id="cName" required placeholder="e.g. Steel Utensils"></label>
+      <label>Icon / Emoji<input id="cIcon" value="🍽️" placeholder="🍳"></label>
+      <label>Description<textarea id="cDescription" rows="3" placeholder="What products belong here?"></textarea></label>
+      <div class="form-actions"><button type="button" class="secondary" data-close>Cancel</button><button class="primary">Save Category</button></div>
+      <div id="categoryError" class="error"></div>
+    </form>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

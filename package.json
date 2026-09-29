@@ -1,0 +1,18 @@
+{
+  "name": "obra-utensils-shop",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Vercel-ready Obra Utensils catalogue with MongoDB and Cloudinary",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie": "^1.0.2",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.19.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo Vercel deployment ready"
+  }
+}
