@@ -1,85 +1,66 @@
-# Obra Utensils Shop — Vercel + MongoDB + Cloudinary
+# Obra Utensils Shop — Vercel + Neon Postgres + Cloudinary
 
-Production-ready version for deploying the Obra utensils catalogue to GitHub and Vercel.
+Production-ready Obra utensils catalogue with a Neon Postgres database.
 
 ## Architecture
 
 - Frontend: `public/`
 - API: `api/index.js`
-- Database: MongoDB Atlas
+- Database: Neon Postgres
 - Product images: Cloudinary
 - Hosting: Vercel
 - Authentication: JWT stored in an HTTP-only cookie
 
-Vercel's local filesystem is NOT used for permanent shop data.
+The application does not use the local filesystem for permanent shop data.
 
-## 1. Local test
+## 1. Configure Neon
+
+Create a project in [Neon](https://neon.com/). In the Neon Console, open **Connect** and copy the pooled connection string for your database. Keep the SSL setting supplied by Neon.
+
+Copy `.env.example` to `.env` and set:
+
+```text
+DATABASE_URL=your-complete-neon-connection-string
+```
+
+The API creates the `admins`, `categories`, and `products` tables and seeds the default categories on its first request. IDs use UUIDs. Existing MongoDB data and `data/shop-data.json` are not automatically imported; add products through the admin panel after connecting Neon.
+
+## 2. Configure Cloudinary
+
+Create a Cloudinary account, then copy the cloud name, API key, and API secret from its dashboard into `.env` (and Vercel environment variables):
+
+```text
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
+
+The admin panel uploads images directly to Cloudinary using a short-lived signed request. Neon stores the secure image URL.
+
+## 3. Configure admin access
+
+Set a strong password and a random JWT secret of at least 32 characters:
+
+```text
+JWT_SECRET=your-long-random-secret-at-least-32-characters
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your-strong-admin-password
+```
+
+The API creates this admin account on its first request if it does not exist. Changing these variables later does not overwrite the existing account. Never commit `.env` to GitHub.
+
+## 4. Run locally
 
 ```bash
 npm install
 npm start
 ```
 
-Copy `.env.example` to `.env` and fill in the values before starting the app. Local `npm start` uses the same MongoDB API as Vercel; it does not write catalogue data to the old JSON file.
-
-## 2. MongoDB Atlas
-
-Create a MongoDB Atlas cluster and database user.
-
-Create a database named `obra_utensils`.
-
-In Atlas Network Access, allow the outbound IPs used by your Vercel functions. Vercel's [Static IP feature](https://vercel.com/kb/guide/can-i-get-a-fixed-ip-address) can provide stable egress IPs when available on your plan; add those IPs to the Atlas allowlist. Avoid `0.0.0.0/0` for production because it allows connections from any IP.
-
-Get your connection string and put it in Vercel as:
-
-`MONGODB_URI`
-
-Also add:
-
-`MONGODB_DB=obra_utensils`
-
-## 3. Cloudinary
-
-Create a Cloudinary account.
-
-Get:
-- Cloud name
-- API key
-- API secret
-
-Add these Vercel environment variables:
-
-```text
-CLOUDINARY_CLOUD_NAME
-CLOUDINARY_API_KEY
-CLOUDINARY_API_SECRET
-```
-
-The admin panel uploads images directly to Cloudinary using a short-lived signed upload request. The MongoDB product record stores the resulting secure image URL.
-
-## 4. Admin environment variables
-
-Add:
-
-```text
-JWT_SECRET=<long-random-secret>
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=<your-real-password>
-```
-
-Do NOT put `.env` into GitHub.
+Open `http://localhost:3000`.
 
 ## 5. Deploy to Vercel
 
-Push this entire folder to GitHub.
-
-Then import the repository into Vercel.
-
-In Vercel → Project → Settings → Environment Variables, add all variables from `.env.example`.
-
-Redeploy after saving variables.
-
-On the first request, the API creates the admin account from `ADMIN_USERNAME` and `ADMIN_PASSWORD` and seeds the default categories if the collections are empty. Set a strong admin password before the first deployment. Changing those variables later does not overwrite an admin account that already exists.
+Push the project to GitHub and import it into Vercel. Add all values from `.env.example` under **Project Settings → Environment Variables**, then redeploy. For local serverless testing, install Vercel CLI and run `vercel dev`.
 
 ## API routes
 
@@ -100,9 +81,3 @@ Admin:
 - `PUT /api/admin/products/:id`
 - `DELETE /api/admin/products/:id`
 - `GET /api/admin/cloudinary-signature`
-
-## Important
-
-Do not use the old JSON-storage backend for production if multiple devices need to edit the catalogue. This version uses MongoDB Atlas, so categories/products remain available after Vercel deployments.
-
-For local serverless testing, install Vercel CLI (`npm i -g vercel`) and run `vercel dev`.

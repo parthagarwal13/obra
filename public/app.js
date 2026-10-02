@@ -6,7 +6,9 @@ const money = n => n ? `₹${Number(n).toLocaleString("en-IN")}` : "Price on req
 
 async function loadStore() {
   const res = await fetch("/api/store");
-  store = await res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Catalogue request failed (${res.status})`);
+  store = data;
   $("year").textContent = new Date().getFullYear();
   renderCategories();
   renderProducts();
@@ -114,5 +116,5 @@ function escapeHtml(value) {
 
 loadStore().catch(err => {
   console.error(err);
-  $("products").innerHTML = `<div class="empty"><h3>Could not load catalogue</h3><p>Start the Node.js server and refresh.</p></div>`;
+  $("products").innerHTML = `<div class="empty"><h3>Could not load catalogue</h3><p>${escapeHtml(err.message || "Check the server configuration and refresh.")}</p></div>`;
 });

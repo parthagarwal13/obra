@@ -2,17 +2,17 @@
   "name": "obra-utensils-shop",
   "version": "2.0.0",
   "private": true,
-  "description": "Vercel-ready Obra Utensils catalogue with MongoDB and Cloudinary",
+  "description": "Vercel-ready Obra Utensils catalogue with Neon Postgres and Cloudinary",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "bcryptjs": "^2.4.3",
     "cookie": "^1.0.2",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.19.0"
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
