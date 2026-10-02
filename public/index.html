@@ -137,6 +137,20 @@
       </div>
     </section>
   </div>
+  <div id="orderSuccess" class="success-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <div class="success-backdrop" data-close-success></div>
+    <section class="success-card">
+      <button class="success-close" type="button" data-close-success aria-label="Close confirmation">×</button>
+      <div class="success-check" aria-hidden="true"><svg viewBox="0 0 52 52"><path d="M14 27l8 8 17-18" /></svg></div>
+      <span class="eyebrow">ORDER CONFIRMED</span>
+      <h2 id="successTitle">Your order has been placed successfully!</h2>
+      <p id="successGreeting">Thank you for shopping with MAI RAM JAI BHAGAWAN.</p>
+      <div class="success-reference"><span>ORDER REFERENCE</span><strong id="successOrderRef"></strong></div>
+      <p class="success-followup">Our shop will contact you soon to confirm your order.</p>
+      <button id="continueShopping" class="hero-btn success-continue" type="button">Continue Shopping</button>
+    </section>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

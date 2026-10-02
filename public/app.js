@@ -210,6 +210,7 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     $("modal").classList.add("hidden");
     $("cartModal").classList.add("hidden");
+    $("orderSuccess").classList.add("hidden");
   }
 });
 
@@ -240,8 +241,11 @@ $("checkoutForm").addEventListener("submit", async event => {
     saveCart();
     renderCart();
     checkoutForm.reset();
-    message.textContent = `Order placed successfully! Your order reference is ${orderRef}. The shop will contact you soon.`;
-    message.classList.add("success-message");
+    $("cartModal").classList.add("hidden");
+    $("successGreeting").textContent = `Thank you, ${customer.name.trim()}! We appreciate your order.`;
+    $("successOrderRef").textContent = orderRef;
+    $("orderSuccess").classList.remove("hidden");
+    $("continueShopping").focus();
   } catch (error) {
     message.textContent = error.message || "Could not place your order. Please try again.";
     message.classList.add("error-message");
@@ -250,6 +254,15 @@ $("checkoutForm").addEventListener("submit", async event => {
     button.disabled = cart.length === 0;
   }
 });
+
+function closeOrderSuccess() {
+  $("orderSuccess").classList.add("hidden");
+}
+
+document.querySelectorAll("[data-close-success]").forEach(element => {
+  element.addEventListener("click", closeOrderSuccess);
+});
+$("continueShopping").addEventListener("click", closeOrderSuccess);
 
 $("search").addEventListener("input", renderProducts);
 
