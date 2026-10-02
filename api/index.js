@@ -116,10 +116,12 @@ async function initDb() {
       const username = process.env.ADMIN_USERNAME || "admin";
       const password = process.env.ADMIN_PASSWORD;
       if (password) {
-        const existing = await db`SELECT id FROM admins WHERE username = ${username} LIMIT 1`;
-        if (!existing.length) {
+        const [existing] = await db`SELECT id, password FROM admins WHERE username = ${username} LIMIT 1`;
+        if (!existing) {
           await db`INSERT INTO admins (username, password)
             VALUES (${username}, ${await bcrypt.hash(password, 12)}) ON CONFLICT (username) DO NOTHING`;
+        } else if (!await bcrypt.compare(password, existing.password)) {
+          await db`UPDATE admins SET password = ${await bcrypt.hash(password, 12)} WHERE id = ${existing.id}`;
         }
       }
     })().catch(error => {

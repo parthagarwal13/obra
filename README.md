@@ -47,7 +47,7 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-strong-admin-password
 ```
 
-The API creates this admin account on its first request if it does not exist. Changing these variables later does not overwrite the existing account. Never commit `.env` to GitHub.
+The API creates this admin account on its first request if it does not exist. When `ADMIN_PASSWORD` changes, the API updates the existing account on its next request. Never commit `.env` to GitHub.
 
 ## 4. Run locally
 
