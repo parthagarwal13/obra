@@ -1,8 +1,8 @@
 {
-  "name": "obra-utensils-shop",
+  "name": "mai-ram-jai-bhagawan-shop",
   "version": "2.0.0",
   "private": true,
-  "description": "Vercel-ready Obra Utensils catalogue with Neon Postgres and Cloudinary",
+  "description": "MAI Ram JAI BHAGAWAN utensils catalogue with Neon Postgres and Cloudinary",
   "engines": {
     "node": ">=20"
   },

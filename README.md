@@ -1,6 +1,6 @@
-# Obra Utensils Shop — Vercel + Neon Postgres + Cloudinary
+# MAI Ram JAI BHAGAWAN — Vercel + Neon Postgres + Cloudinary
 
-Production-ready Obra utensils catalogue with a Neon Postgres database.
+Production-ready MAI Ram JAI BHAGAWAN utensils catalogue with a Neon Postgres database.
 
 ## Architecture
 
