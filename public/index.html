@@ -20,7 +20,10 @@
         <div class="brand-sub">UTENSILS & HOUSEHOLD</div>
       </div>
     </div>
-    <a class="admin-link" href="/admin.html">Admin Portal ↗</a>
+    <div class="header-actions">
+      <button id="cartButton" class="cart-trigger" type="button" disabled>Cart <span id="cartCount">0</span></button>
+      <a class="admin-link" href="/admin.html">Admin Portal</a>
+    </div>
   </header>
 
   <main>
@@ -100,6 +103,40 @@
     </div>
   </div>
 
+
+  <div id="cartModal" class="cart-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+    <div class="cart-backdrop" data-close-cart></div>
+    <section class="cart-panel">
+      <header class="cart-heading">
+        <div><span class="eyebrow">YOUR ORDER</span><h2 id="cartTitle">Cart &amp; checkout</h2></div>
+        <button class="close" type="button" data-close-cart aria-label="Close cart">×</button>
+      </header>
+      <div class="cart-layout">
+        <div class="cart-summary">
+          <h3>Your items</h3>
+          <div id="cartItems"></div>
+          <div class="cart-total"><span>Total</span><strong id="cartTotal">₹0</strong></div>
+        </div>
+        <form id="checkoutForm" class="checkout-form">
+          <h3>Delivery details</h3>
+          <label>Full name *<input name="name" required maxlength="100" autocomplete="name"></label>
+          <label>Phone number *<input name="phone" type="tel" required maxlength="20" autocomplete="tel" placeholder="Your contact number"></label>
+          <label>Email (optional)<input name="email" type="email" maxlength="254" autocomplete="email"></label>
+          <label>Address / house and street *<textarea name="address" required maxlength="500" autocomplete="street-address" rows="2"></textarea></label>
+          <label>Landmark (optional)<input name="landmark" maxlength="200"></label>
+          <div class="checkout-grid">
+            <label>City *<input name="city" required maxlength="100" autocomplete="address-level2"></label>
+            <label>State *<input name="state" required maxlength="100" autocomplete="address-level1"></label>
+          </div>
+          <label>PIN code *<input name="postalCode" required maxlength="12" autocomplete="postal-code"></label>
+          <label>Order note (optional)<textarea name="notes" maxlength="500" rows="2" placeholder="Any delivery instructions?"></textarea></label>
+          <p id="checkoutMessage" class="checkout-message" role="status"></p>
+          <button id="placeOrder" class="hero-btn place-order" type="submit">Place Order</button>
+          <p class="checkout-note">No online payment is collected here. The shop will contact you to confirm your order.</p>
+        </form>
+      </div>
+    </section>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>

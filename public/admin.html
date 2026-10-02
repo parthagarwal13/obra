@@ -37,7 +37,8 @@
       <nav>
         <button class="nav active" data-tab="dashboard">▦ <span>Dashboard</span></button>
         <button class="nav" data-tab="products">◫ <span>Products</span></button>
-        <button class="nav" data-tab="categories">◉ <span>Categories</span></button>
+        <button class="nav" data-tab="orders">Orders</button>
+        <button class="nav" data-tab="categories">Categories</button>
       </nav>
       <div class="side-bottom">
         <a href="/" target="_blank">View Store ↗</a>
@@ -86,6 +87,13 @@
           <button id="addCategory" class="primary">＋ Add Category</button>
         </div>
         <div id="categoriesTable" class="table-card"></div>
+      </section>
+      <section id="ordersTab" class="tab hidden">
+        <div class="section-bar">
+          <div><h2>Customer Orders</h2><p>Customer details, delivery address, products, quantities, and order totals.</p></div>
+          <button id="refreshOrders" class="secondary" type="button">Refresh Orders</button>
+        </div>
+        <div id="ordersList" class="orders-list"></div>
       </section>
     </main>
   </div>

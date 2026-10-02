@@ -58,6 +58,7 @@ function switchTab(tab) {
   if(tab==="dashboard") loadDashboard();
   if(tab==="products") loadProducts();
   if(tab==="categories") loadCategories();
+  if(tab==="orders") loadOrders();
 }
 
 async function loadDashboard() {
@@ -66,6 +67,54 @@ async function loadDashboard() {
   $("sCategories").textContent=d.categories;
   $("sVisible").textContent=d.visible;
   $("sFeatured").textContent=d.featured;
+}
+
+async function loadOrders() {
+  const container = $("ordersList");
+  container.innerHTML = `<p class="orders-empty">Loading orders...</p>`;
+  try {
+    const orders = await api("/api/admin/orders");
+    if (!orders.length) {
+      container.innerHTML = `<p class="orders-empty">No customer orders yet.</p>`;
+      return;
+    }
+    container.innerHTML = orders.map(order => `
+      <article class="order-card">
+        <header class="order-card-head">
+          <div><span class="eyebrow">ORDER ${escapeHtml(order.id.slice(0, 8).toUpperCase())}</span><small>${new Date(order.created_at).toLocaleString()}</small></div>
+          <span class="status">${escapeHtml(order.status || "New")}</span>
+        </header>
+        <div class="order-customer-grid">
+          <div><span class="order-label">CUSTOMER</span><strong>${escapeHtml(order.customer_name)}</strong><span>${escapeHtml(order.phone)}</span>${order.email ? `<span>${escapeHtml(order.email)}</span>` : ""}</div>
+          <div><span class="order-label">DELIVERY ADDRESS</span><strong>${escapeHtml(order.address_line)}</strong>${order.landmark ? `<span>Near ${escapeHtml(order.landmark)}</span>` : ""}<span>${escapeHtml(order.city)}, ${escapeHtml(order.state)} ${escapeHtml(order.postal_code)}</span></div>
+        </div>
+        <div class="order-items">
+          <span class="order-label">ITEMS</span>
+          ${(order.items || []).map(item => `<div class="order-item-row"><span>${escapeHtml(item.product_name)} × ${Number(item.quantity)} ${escapeHtml(item.unit || "piece")}</span><span>${money(item.line_total)}</span></div>`).join("")}
+        </div>
+        ${order.notes ? `<p class="order-note"><b>Customer note:</b> ${escapeHtml(order.notes)}</p>` : ""}
+        <footer class="order-card-foot"><span>${Number(order.total_quantity)} item(s)</span><strong>Total: ${money(order.total_amount)}</strong><button class="icon-btn danger-btn" type="button" onclick="deleteOrder('${escapeHtml(order.id)}')">Delete Order</button></footer>
+      </article>
+    `).join("");
+  } catch (error) {
+    container.innerHTML = `<p class="orders-empty error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+$("refreshOrders").addEventListener("click", loadOrders);
+
+async function deleteOrder(id) {
+  if (!confirm("Delete this order and its saved item details? This cannot be undone.")) return;
+  try {
+    await api(`/api/admin/orders/${encodeURIComponent(id)}`, { method: "DELETE" });
+    await loadOrders();
+  } catch (error) {
+    alert(error.message || "Could not delete the order.");
+  }
+}
+
+function money(value) {
+  return `${String.fromCharCode(0x20B9)}${Number(value || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 async function loadCategories() {

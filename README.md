@@ -23,7 +23,7 @@ Copy `.env.example` to `.env` and set:
 DATABASE_URL=your-complete-neon-connection-string
 ```
 
-The API creates the `admins`, `categories`, and `products` tables and seeds the default categories on its first request. IDs use UUIDs. Existing MongoDB data and `data/shop-data.json` are not automatically imported; add products through the admin panel after connecting Neon.
+The API creates the `admins`, `categories`, `products`, `orders`, and `order_items` tables and seeds the default categories on its first request. IDs use UUIDs. Customers can place guest-checkout orders with their contact and delivery details; order and product/quantity/price snapshots are saved in Neon. The admin portal lists complete order details and can delete unwanted orders. Existing MongoDB data and `data/shop-data.json` are not automatically imported; add products through the admin panel after connecting Neon.
 
 ## 2. Configure Cloudinary
 
@@ -66,12 +66,15 @@ Push the project to GitHub and import it into Vercel. Add all values from `.env.
 
 Public:
 - `GET /api/store`
+- `POST /api/orders`
 
 Admin:
 - `POST /api/admin/login`
 - `POST /api/admin/logout`
 - `GET /api/admin/me`
 - `GET /api/admin/dashboard`
+- `GET /api/admin/orders`
+- `DELETE /api/admin/orders/:id`
 - `GET /api/admin/categories`
 - `POST /api/admin/categories`
 - `PUT /api/admin/categories/:id`

@@ -107,6 +107,34 @@ async function initDb() {
         visible BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`;
+      await db`CREATE TABLE IF NOT EXISTS orders (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        customer_name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        email TEXT NOT NULL DEFAULT '',
+        address_line TEXT NOT NULL,
+        landmark TEXT NOT NULL DEFAULT '',
+        city TEXT NOT NULL,
+        state TEXT NOT NULL,
+        postal_code TEXT NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        total_amount NUMERIC(12, 2) NOT NULL,
+        total_quantity INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'New',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`;
+      await db`CREATE TABLE IF NOT EXISTS order_items (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+        product_name TEXT NOT NULL,
+        unit TEXT NOT NULL DEFAULT 'piece',
+        unit_price NUMERIC(12, 2) NOT NULL,
+        quantity INTEGER NOT NULL CHECK (quantity > 0),
+        line_total NUMERIC(12, 2) NOT NULL
+      )`;
+      await db`CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders (created_at DESC)`;
+      await db`CREATE INDEX IF NOT EXISTS order_items_order_id_idx ON order_items (order_id)`;
 
       for (const [name, description, icon] of DEFAULT_CATEGORIES) {
         await db`INSERT INTO categories (name, description, icon)
@@ -171,6 +199,98 @@ app.get("/api/store", asyncHandler(async (req, res) => {
   }
 }));
 
+app.post("/api/orders", asyncHandler(async (req, res) => {
+  const db = await initDb();
+  const {
+    name, phone, email = "", address, landmark = "", city, state, postalCode, notes = "", items
+  } = req.body || {};
+  const required = [name, phone, address, city, state, postalCode];
+  if (required.some(value => typeof value !== "string" || !value.trim())) {
+    return res.status(400).json({ error: "Please fill in your name, phone, address, city, state, and PIN code." });
+  }
+  if (!/^[0-9+() -]{7,20}$/.test(phone.trim()) || phone.replace(/\D/g, "").length < 7) {
+    return res.status(400).json({ error: "Enter a valid phone number." });
+  }
+  if (typeof email !== "string" || email.length > 254 || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+    return res.status(400).json({ error: "Enter a valid email address or leave it blank." });
+  }
+  if (typeof address !== "string" || address.trim().length < 5 || address.length > 500 ||
+      [name, phone, city, state, postalCode, landmark, notes].some(value => typeof value !== "string" || value.length > 500)) {
+    return res.status(400).json({ error: "One or more order details are too long or invalid." });
+  }
+  if (!Array.isArray(items) || items.length < 1 || items.length > 50) {
+    return res.status(400).json({ error: "Your cart is empty or contains too many products." });
+  }
+
+  const quantities = new Map();
+  for (const item of items) {
+    if (!validId(item?.id) || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1 || Number(item.quantity) > 99) {
+      return res.status(400).json({ error: "A cart item or quantity is invalid. Please refresh your cart." });
+    }
+    const id = item.id.toLowerCase();
+    quantities.set(id, (quantities.get(id) || 0) + Number(item.quantity));
+  }
+  if ([...quantities.values()].some(quantity => quantity > 99)) {
+    return res.status(400).json({ error: "Maximum quantity per product is 99." });
+  }
+
+  const ids = [...quantities.keys()];
+  const placeholders = ids.map((_, i) => `$${i + 1}`).join(", ");
+  const products = await db.query(
+    `SELECT id, name, unit, price, stock_status FROM products WHERE visible = TRUE AND price > 0 AND id IN (${placeholders})`,
+    ids
+  );
+  if (products.length !== ids.length) {
+    return res.status(400).json({ error: "A product in your cart is no longer available. Please refresh the page." });
+  }
+  if (products.some(product => product.stock_status === "Out of Stock")) {
+    return res.status(400).json({ error: "A product in your cart is out of stock. Please update your cart." });
+  }
+
+  let totalCents = 0;
+  let totalQuantity = 0;
+  const orderItems = products.map(product => {
+    const quantity = quantities.get(String(product.id));
+    const unitPriceCents = Math.round(Number(product.price) * 100);
+    const lineTotalCents = unitPriceCents * quantity;
+    totalCents += lineTotalCents;
+    totalQuantity += quantity;
+    return {
+      product_id: String(product.id),
+      product_name: product.name,
+      unit: product.unit || "piece",
+      unit_price: (unitPriceCents / 100).toFixed(2),
+      quantity,
+      line_total: (lineTotalCents / 100).toFixed(2)
+    };
+  });
+
+  const itemRecords = JSON.stringify(orderItems);
+  const itemRecordsParam = "$12::jsonb";
+  const [order] = await db.query(`
+    WITH created_order AS (
+      INSERT INTO orders
+        (customer_name, phone, email, address_line, landmark, city, state, postal_code,
+         notes, total_amount, total_quantity)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id
+    ), saved_items AS (
+      INSERT INTO order_items (order_id, product_id, product_name, unit, unit_price, quantity, line_total)
+      SELECT created_order.id, item.product_id, item.product_name, item.unit,
+        item.unit_price, item.quantity, item.line_total
+      FROM created_order
+      CROSS JOIN jsonb_to_recordset(${itemRecordsParam}) AS item(
+        product_id UUID, product_name TEXT, unit TEXT, unit_price NUMERIC, quantity INTEGER, line_total NUMERIC
+      )
+      RETURNING order_id
+    )
+    SELECT created_order.id FROM created_order JOIN saved_items ON saved_items.order_id = created_order.id LIMIT 1`,
+    [name.trim(), phone.trim(), email.trim(), address.trim(), landmark.trim(), city.trim(), state.trim(),
+      postalCode.trim(), notes.trim(), (totalCents / 100).toFixed(2), totalQuantity, itemRecords]
+  );
+  res.status(201).json({ success: true, orderId: String(order.id) });
+}));
+
 app.post("/api/admin/login", asyncHandler(async (req, res) => {
   try {
     const db = await initDb();
@@ -203,6 +323,32 @@ app.get("/api/admin/dashboard", requireAuth, asyncHandler(async (req, res) => {
     (SELECT COUNT(*)::int FROM products WHERE visible = TRUE) AS visible,
     (SELECT COUNT(*)::int FROM products WHERE featured = TRUE) AS featured`;
   res.json(row);
+}));
+
+app.get("/api/admin/orders", requireAuth, asyncHandler(async (req, res) => {
+  const db = await initDb();
+  const orders = await db`
+    SELECT o.id, o.customer_name, o.phone, o.email, o.address_line, o.landmark,
+      o.city, o.state, o.postal_code, o.notes, o.total_amount, o.total_quantity,
+      o.status, o.created_at,
+      COALESCE(json_agg(json_build_object(
+        'product_name', oi.product_name,
+        'unit', oi.unit,
+        'unit_price', oi.unit_price,
+        'quantity', oi.quantity,
+        'line_total', oi.line_total
+      )) FILTER (WHERE oi.id IS NOT NULL), '[]'::json) AS items
+    FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
+    GROUP BY o.id ORDER BY o.created_at DESC`;
+  res.json(orders.map(order => ({ ...order, id: String(order.id) })));
+}));
+
+app.delete("/api/admin/orders/:id", requireAuth, asyncHandler(async (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: "Invalid order id" });
+  const db = await initDb();
+  const deleted = await db`DELETE FROM orders WHERE id = ${req.params.id} RETURNING id`;
+  if (!deleted.length) return res.status(404).json({ error: "Order not found" });
+  res.json({ success: true });
 }));
 
 app.get("/api/admin/categories", requireAuth, asyncHandler(async (req, res) => {
