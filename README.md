@@ -1,6 +1,6 @@
-# MAI Ram JAI BHAGAWAN — Vercel + Neon Postgres + Cloudinary
+# MAI RAM JAI BHAGAWAN — Vercel + Neon Postgres + Cloudinary
 
-Production-ready MAI Ram JAI BHAGAWAN utensils catalogue with a Neon Postgres database.
+Production-ready MAI RAM JAI BHAGAWAN utensils catalogue with a Neon Postgres database.
 
 ## Architecture
 
