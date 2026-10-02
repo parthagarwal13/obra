@@ -88,6 +88,8 @@ h1 em { color: var(--terracotta); font-style: italic; }
 .product-desc { color:var(--muted); font-size:11px; line-height:1.55; min-height:34px; }
 .product-bottom { display:flex; justify-content:space-between; align-items:end; margin-top:15px; }
 .price { font-size:16px; font-weight:800; }
+.original-price { color:var(--muted); font-size:.82em; font-weight:500; margin-right:5px; }
+.sale-price { color:var(--terracotta); }
 .unit { font-size:10px; color:var(--muted); }
 .stock { font-size:9px; font-weight:800; color:#637153; letter-spacing:.7px; margin-top:8px; }
 .empty { text-align:center; padding:80px 20px; color:var(--muted); }

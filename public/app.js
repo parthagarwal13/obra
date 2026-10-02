@@ -89,7 +89,7 @@ function renderProducts() {
         <div class="product-desc">${escapeHtml(p.description || "Quality household product.")}</div>
         <div class="product-bottom">
           <div>
-            <div class="price">${p.price ? money(p.price) : "Price on request"}</div>
+            <div class="price">${p.sale_price ? `<s class="original-price">${money(p.price)}</s> <strong class="sale-price">${money(p.sale_price)}</strong>` : p.price ? money(p.price) : "Price on request"}</div>
             <div class="unit">per ${escapeHtml(p.unit || "piece")}</div>
           </div>
           <div class="stock">${escapeHtml(p.stock_status || "In Stock")}</div>
@@ -155,7 +155,7 @@ function renderCart() {
       ${product.image ? `<img src="${escapeHtml(product.image)}" alt="">` : `<div class="cart-item-image">${escapeHtml(product.category_icon || "")}</div>`}
       <div class="cart-item-copy">
         <strong>${escapeHtml(product.name)}</strong>
-        <span>${money(product.price)} / ${escapeHtml(product.unit || "piece")}</span>
+        <span>${product.sale_price ? `<s class="original-price">${money(product.price)}</s> <strong class="sale-price">${money(product.sale_price)}</strong>` : money(product.price)} / ${escapeHtml(product.unit || "piece")}</span>
         <div class="quantity-control">
           <button type="button" data-quantity="-1" data-id="${escapeHtml(id)}" aria-label="Decrease quantity">−</button>
           <span>${quantity}</span>
@@ -163,11 +163,11 @@ function renderCart() {
           <button class="remove-cart" type="button" data-remove-cart="${escapeHtml(id)}">Remove</button>
         </div>
       </div>
-      <strong class="cart-line-total">${money(Number(product.price) * quantity)}</strong>
+      <strong class="cart-line-total">${money(Number(product.sale_price || product.price) * quantity)}</strong>
     </div>
   `).join("") : `<p class="cart-empty">Your cart is empty. Add a product to get started.</p>`;
 
-  const total = cartProducts.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+  const total = cartProducts.reduce((sum, item) => sum + Number(item.product.sale_price || item.product.price) * item.quantity, 0);
   $("cartTotal").textContent = money(total);
   $("placeOrder").disabled = cartProducts.length === 0;
 }
@@ -181,7 +181,7 @@ function openProduct(id) {
   $("modalCategory").textContent = p.category_name;
   $("modalName").textContent = p.name;
   $("modalDescription").textContent = p.description || "Quality household product available at our shop.";
-  $("modalPrice").textContent = p.price ? money(p.price) : "Price on request";
+  $("modalPrice").innerHTML = p.sale_price ? `<s class="original-price">${money(p.price)}</s> <strong class="sale-price">${money(p.sale_price)}</strong>` : p.price ? money(p.price) : "Price on request";
   $("modalStock").textContent = p.stock_status || "IN STOCK";
   $("modal").classList.remove("hidden");
 }

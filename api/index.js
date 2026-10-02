@@ -123,6 +123,7 @@ async function initDb() {
         status TEXT NOT NULL DEFAULT 'New',
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`;
+      await db`ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_price NUMERIC(12, 2)`;
       await db`CREATE TABLE IF NOT EXISTS order_items (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -177,7 +178,7 @@ app.get("/api/store", asyncHandler(async (req, res) => {
     const db = await initDb();
     const [categories, products] = await Promise.all([
       db`SELECT id, name, description, icon, created_at FROM categories ORDER BY name ASC`,
-      db`SELECT p.id, p.category_id, p.name, p.description, p.price, p.unit, p.image,
+      db`SELECT p.id, p.category_id, p.name, p.description, p.price, p.sale_price, p.unit, p.image,
                 p.stock_status, p.featured, p.visible, p.created_at,
                 COALESCE(c.name, 'Uncategorized') AS category_name,
                 COALESCE(c.icon, '🍽️') AS category_icon
@@ -237,7 +238,7 @@ app.post("/api/orders", asyncHandler(async (req, res) => {
   const ids = [...quantities.keys()];
   const placeholders = ids.map((_, i) => `$${i + 1}`).join(", ");
   const products = await db.query(
-    `SELECT id, name, unit, price, stock_status FROM products WHERE visible = TRUE AND price > 0 AND id IN (${placeholders})`,
+    `SELECT id, name, unit, price, sale_price, stock_status FROM products WHERE visible = TRUE AND price > 0 AND id IN (${placeholders})`,
     ids
   );
   if (products.length !== ids.length) {
@@ -251,7 +252,10 @@ app.post("/api/orders", asyncHandler(async (req, res) => {
   let totalQuantity = 0;
   const orderItems = products.map(product => {
     const quantity = quantities.get(String(product.id));
-    const unitPriceCents = Math.round(Number(product.price) * 100);
+    const salePrice = Number(product.sale_price);
+    const effectivePrice = Number.isFinite(salePrice) && salePrice > 0 && salePrice < Number(product.price)
+      ? salePrice : Number(product.price);
+    const unitPriceCents = Math.round(effectivePrice * 100);
     const lineTotalCents = unitPriceCents * quantity;
     totalCents += lineTotalCents;
     totalQuantity += quantity;
@@ -395,7 +399,7 @@ app.delete("/api/admin/categories/:id", requireAuth, asyncHandler(async (req, re
 
 app.get("/api/admin/products", requireAuth, asyncHandler(async (req, res) => {
   const db = await initDb();
-  const products = await db`SELECT p.id, p.category_id, p.name, p.description, p.price, p.unit, p.image,
+  const products = await db`SELECT p.id, p.category_id, p.name, p.description, p.price, p.sale_price, p.unit, p.image,
       p.stock_status, p.featured, p.visible, p.created_at,
       COALESCE(c.name, 'Uncategorized') AS category_name
     FROM products p LEFT JOIN categories c ON c.id = p.category_id ORDER BY p.created_at DESC`;
@@ -404,13 +408,18 @@ app.get("/api/admin/products", requireAuth, asyncHandler(async (req, res) => {
 
 app.post("/api/admin/products", requireAuth, asyncHandler(async (req, res) => {
   const db = await initDb();
-  const { category_id, name, description, price, unit, image, stock_status, featured, visible } = req.body;
+  const { category_id, name, description, price, sale_price, unit, image, stock_status, featured, visible } = req.body;
   if (!validId(category_id) || !name?.trim()) {
     return res.status(400).json({ error: "Category and product name are required" });
   }
+  const originalPrice = Number(price) || 0;
+  const discountedPrice = sale_price === "" || sale_price == null ? null : Number(sale_price);
+  if (discountedPrice !== null && (!Number.isFinite(discountedPrice) || discountedPrice <= 0 || discountedPrice >= originalPrice)) {
+    return res.status(400).json({ error: "Discounted price must be greater than 0 and less than the original price." });
+  }
   const [product] = await db`INSERT INTO products
-    (category_id, name, description, price, unit, image, stock_status, featured, visible)
-    VALUES (${category_id}, ${name.trim()}, ${description || ""}, ${Number(price) || 0}, ${unit || "piece"},
+    (category_id, name, description, price, sale_price, unit, image, stock_status, featured, visible)
+    VALUES (${category_id}, ${name.trim()}, ${description || ""}, ${originalPrice}, ${discountedPrice}, ${unit || "piece"},
       ${image || ""}, ${stock_status || "In Stock"}, ${featured === "1" || featured === true},
       ${visible !== "0" && visible !== false}) RETURNING id`;
   res.json({ id: String(product.id) });
@@ -419,17 +428,22 @@ app.post("/api/admin/products", requireAuth, asyncHandler(async (req, res) => {
 app.put("/api/admin/products/:id", requireAuth, asyncHandler(async (req, res) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: "Invalid product id" });
   const db = await initDb();
-  const { category_id, name, description, price, unit, image, stock_status, featured, visible } = req.body;
+  const { category_id, name, description, price, sale_price, unit, image, stock_status, featured, visible } = req.body;
   if (!validId(category_id) || !name?.trim()) {
     return res.status(400).json({ error: "Category and product name are required" });
   }
+  const originalPrice = Number(price) || 0;
+  const discountedPrice = sale_price === "" || sale_price == null ? null : Number(sale_price);
+  if (discountedPrice !== null && (!Number.isFinite(discountedPrice) || discountedPrice <= 0 || discountedPrice >= originalPrice)) {
+    return res.status(400).json({ error: "Discounted price must be greater than 0 and less than the original price." });
+  }
   const rows = image === undefined
     ? await db`UPDATE products SET category_id = ${category_id}, name = ${name.trim()},
-        description = ${description || ""}, price = ${Number(price) || 0}, unit = ${unit || "piece"},
+        description = ${description || ""}, price = ${originalPrice}, sale_price = ${discountedPrice}, unit = ${unit || "piece"},
         stock_status = ${stock_status || "In Stock"}, featured = ${featured === "1" || featured === true},
         visible = ${visible !== "0" && visible !== false} WHERE id = ${req.params.id} RETURNING id`
     : await db`UPDATE products SET category_id = ${category_id}, name = ${name.trim()},
-        description = ${description || ""}, price = ${Number(price) || 0}, unit = ${unit || "piece"},
+        description = ${description || ""}, price = ${originalPrice}, sale_price = ${discountedPrice}, unit = ${unit || "piece"},
         image = ${image}, stock_status = ${stock_status || "In Stock"},
         featured = ${featured === "1" || featured === true}, visible = ${visible !== "0" && visible !== false}
         WHERE id = ${req.params.id} RETURNING id`;

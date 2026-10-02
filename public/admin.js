@@ -143,7 +143,7 @@ async function loadProducts() {
       <div class="row">
         <div>${p.image ? `<img class="thumb" src="${p.image}">` : `<span class="thumb" style="display:inline-grid;place-items:center">🍽️</span>`}<strong>${escapeHtml(p.name)}</strong></div>
         <div>${escapeHtml(p.category_name)}</div>
-        <div>${p.price ? "₹"+Number(p.price).toLocaleString("en-IN") : "On request"}</div>
+        <div>${p.sale_price ? `<s>${money(p.price)}</s> <strong class="sale-price">${money(p.sale_price)}</strong>` : p.price ? money(p.price) : "On request"}</div>
         <div><span class="status ${p.visible ? "" : "off"}">${p.visible ? "VISIBLE" : "HIDDEN"}</span></div>
         <div class="actions">
           <button class="icon-btn" onclick="editProduct('${p.id}')">Edit</button>
@@ -225,7 +225,7 @@ async function openProduct(id=null) {
   if(!id) {
     $("productModalTitle").textContent="Add Product";
     $("productId").value="";
-    $("pName").value=""; $("pPrice").value=""; $("pDescription").value="";
+    $("pName").value=""; $("pPrice").value=""; $("pSalePrice").value=""; $("pDescription").value="";
     $("pUnit").value="piece"; $("pStock").value="In Stock";
     $("pFeatured").checked=false; $("pVisible").checked=true; $("pImage").value="";
   } else {
@@ -233,7 +233,7 @@ async function openProduct(id=null) {
     const p = products.find(x=>String(x.id)===String(id));
     $("productModalTitle").textContent="Edit Product";
     $("productId").value=p.id;
-    $("pName").value=p.name; $("pPrice").value=p.price;
+    $("pName").value=p.name; $("pPrice").value=p.price; $("pSalePrice").value=p.sale_price || "";
     $("pDescription").value=p.description;
     $("pUnit").value=p.unit; $("pStock").value=p.stock_status;
     $("pCategory").value=p.category_id;
@@ -258,6 +258,7 @@ $("productForm").addEventListener("submit", async e => {
       category_id:$("pCategory").value,
       name:$("pName").value,
       price:$("pPrice").value,
+      sale_price:$("pSalePrice").value,
       unit:$("pUnit").value,
       stock_status:$("pStock").value,
       description:$("pDescription").value,
