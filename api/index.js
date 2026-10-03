@@ -187,7 +187,7 @@ app.get("/api/store", asyncHandler(async (req, res) => {
     ]);
     res.json({
       shop: {
-        name: "MAI RAM JAI BHAGAWAN",
+        name: "MAI RAM JAI BHAGWAN",
         location: "Obra, Sonbhadra, Uttar Pradesh",
         phone: "+91 00000 00000",
         tagline: "Quality utensils for every home"
