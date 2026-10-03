@@ -210,6 +210,7 @@ document.addEventListener("keydown", event => {
     $("modal").classList.add("hidden");
     $("cartModal").classList.add("hidden");
     $("orderSuccess").classList.add("hidden");
+    $("ordersModal").classList.add("hidden");
   }
 });
 
@@ -262,6 +263,65 @@ document.querySelectorAll("[data-close-success]").forEach(element => {
   element.addEventListener("click", closeOrderSuccess);
 });
 $("continueShopping").addEventListener("click", closeOrderSuccess);
+
+$("ordersButton").addEventListener("click", () => {
+  $("ordersMessage").textContent = "";
+  $("ordersList").innerHTML = "";
+  $("ordersModal").classList.remove("hidden");
+  $("ordersLookup").elements.email.focus();
+});
+
+$("ordersLookup").addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector("button[type=submit]");
+  const message = $("ordersMessage");
+  button.disabled = true;
+  button.textContent = "Looking up orders...";
+  message.textContent = "";
+  message.classList.remove("error-message");
+  $("ordersList").innerHTML = "";
+  try {
+    const details = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const response = await fetch("/api/orders/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(details)
+    });
+    const orders = await response.json();
+    if (!response.ok) throw new Error(orders.error || "Could not look up your orders.");
+    if (!orders.length) {
+      message.textContent = "No orders matched those details. Check the email and phone number used at checkout.";
+      return;
+    }
+    message.textContent = `${orders.length} order${orders.length === 1 ? "" : "s"} found.`;
+    $("ordersList").innerHTML = orders.map(order => `
+      <article class="customer-order-card">
+        <header class="customer-order-head">
+          <div><span class="eyebrow">ORDER ${escapeHtml(order.id.slice(0, 8).toUpperCase())}</span><small>${escapeHtml(new Date(order.created_at).toLocaleString())}</small></div>
+          <span class="status">${escapeHtml(order.status || "New")}</span>
+        </header>
+        <div class="customer-order-items">${(order.items || []).map(item => `
+          <div class="order-item-row"><span>${escapeHtml(item.product_name)} × ${Number(item.quantity)} ${escapeHtml(item.unit || "piece")} <small>(${money(item.unit_price)} each)</small></span><strong>${money(item.line_total)}</strong></div>
+        `).join("")}</div>
+        <div class="customer-order-meta"><span>${Number(order.total_quantity)} item(s)</span><strong>Total: ${money(order.total_amount)}</strong></div>
+        <details class="customer-order-details"><summary>Delivery details and order note</summary>
+          <p>${escapeHtml(order.address_line)}${order.landmark ? `, near ${escapeHtml(order.landmark)}` : ""}, ${escapeHtml(order.city)}, ${escapeHtml(order.state)} ${escapeHtml(order.postal_code)}</p>
+          ${order.notes ? `<p><b>Order note:</b> ${escapeHtml(order.notes)}</p>` : ""}
+        </details>
+      </article>
+    `).join("");
+  } catch (error) {
+    message.textContent = error.message || "Could not look up your orders.";
+    message.classList.add("error-message");
+  } finally {
+    button.textContent = "Find my orders";
+    button.disabled = false;
+  }
+});
+
+document.querySelectorAll("[data-close-orders]").forEach(element => {
+  element.addEventListener("click", () => $("ordersModal").classList.add("hidden"));
+});
 
 $("search").addEventListener("input", renderProducts);
 

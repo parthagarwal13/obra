@@ -295,6 +295,31 @@ app.post("/api/orders", asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, orderId: String(order.id) });
 }));
 
+app.post("/api/orders/history", asyncHandler(async (req, res) => {
+  const { phone, email } = req.body || {};
+  if (typeof phone !== "string" || !/^[0-9+() -]{7,20}$/.test(phone.trim()) ||
+      typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ error: "Enter the phone number and email used when placing your orders." });
+  }
+
+  const db = await initDb();
+  const orders = await db`
+    SELECT o.id, o.customer_name, o.phone, o.email, o.address_line, o.landmark,
+      o.city, o.state, o.postal_code, o.notes, o.total_amount, o.total_quantity,
+      o.status, o.created_at,
+      COALESCE(json_agg(json_build_object(
+        'product_name', oi.product_name,
+        'unit', oi.unit,
+        'unit_price', oi.unit_price,
+        'quantity', oi.quantity,
+        'line_total', oi.line_total
+      )) FILTER (WHERE oi.id IS NOT NULL), '[]'::json) AS items
+    FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
+    WHERE o.phone = ${phone.trim()} AND LOWER(o.email) = LOWER(${email.trim()}) AND o.email <> ''
+    GROUP BY o.id ORDER BY o.created_at DESC`;
+  res.json(orders.map(order => ({ ...order, id: String(order.id) })));
+}));
+
 app.post("/api/admin/login", asyncHandler(async (req, res) => {
   try {
     const db = await initDb();

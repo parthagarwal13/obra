@@ -22,6 +22,7 @@
     </div>
     <div class="header-actions">
       <button id="cartButton" class="cart-trigger" type="button" disabled>Cart <span id="cartCount">0</span></button>
+      <button id="ordersButton" class="orders-trigger" type="button">My Orders</button>
       <a class="admin-link" href="/admin.html">Admin Portal</a>
     </div>
   </header>
@@ -123,7 +124,7 @@
           <h3>Delivery details</h3>
           <label>Full name *<input name="name" required maxlength="100" autocomplete="name"></label>
           <label>Phone number *<input name="phone" type="tel" required maxlength="20" autocomplete="tel" placeholder="Your contact number"></label>
-          <label>Email (optional)<input name="email" type="email" maxlength="254" autocomplete="email"></label>
+          <label>Email (for order history)<input name="email" type="email" maxlength="254" autocomplete="email"></label>
           <label>Address / house and street *<textarea name="address" required maxlength="500" autocomplete="street-address" rows="2"></textarea></label>
           <label>Landmark (optional)<input name="landmark" maxlength="200"></label>
           <div class="checkout-grid">
@@ -150,6 +151,24 @@
       <div class="success-reference"><span>ORDER REFERENCE</span><strong id="successOrderRef"></strong></div>
       <p class="success-followup">Our shop will contact you soon to confirm your order.</p>
       <button id="continueShopping" class="hero-btn success-continue" type="button">Continue Shopping</button>
+    </section>
+  </div>
+
+  <div id="ordersModal" class="orders-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ordersTitle">
+    <div class="orders-backdrop" data-close-orders></div>
+    <section class="orders-panel">
+      <header class="orders-heading">
+        <div><span class="eyebrow">YOUR ACCOUNT</span><h2 id="ordersTitle">Order history</h2></div>
+        <button class="close" type="button" data-close-orders aria-label="Close order history">×</button>
+      </header>
+      <p class="orders-intro">Enter the same phone number and email you used at checkout. Orders placed without an email cannot be matched here.</p>
+      <form id="ordersLookup" class="orders-lookup">
+        <label>Phone number<input name="phone" type="tel" required maxlength="20" autocomplete="tel"></label>
+        <label>Checkout email<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
+        <button class="hero-btn" type="submit">Find my orders</button>
+      </form>
+      <p id="ordersMessage" class="checkout-message" role="status"></p>
+      <div id="ordersList" class="customer-orders-list"></div>
     </section>
   </div>
 

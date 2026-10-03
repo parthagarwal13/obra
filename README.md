@@ -67,6 +67,7 @@ Push the project to GitHub and import it into Vercel. Add all values from `.env.
 Public:
 - `GET /api/store`
 - `POST /api/orders`
+- `POST /api/orders/history` (looks up orders by the checkout phone number and email)
 
 Admin:
 - `POST /api/admin/login`
