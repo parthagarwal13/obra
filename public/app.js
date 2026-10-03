@@ -31,7 +31,6 @@ async function loadStore() {
   const available = new Set(store.products.map(product => String(product.id)));
   cart = cart.filter(item => available.has(item.id));
   saveCart();
-  $("year").textContent = new Date().getFullYear();
   renderCategories();
   renderProducts();
   renderCart();

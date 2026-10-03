@@ -98,6 +98,12 @@ h1 em { color: var(--terracotta); font-style: italic; }
 footer { background:var(--ink); color:#f8f0df; padding:50px 7%; display:flex; justify-content:space-between; }
 .footer-brand { font:800 19px "Playfair Display"; letter-spacing:1px; }
 footer p { color:#bdb6a8; font-size:11px; }
+.footer-address { margin-top:14px; color:#bdb6a8; font-size:11px; font-style:normal; line-height:1.8; }
+.footer-address a { color:inherit; text-decoration:none; }
+.footer-address a:hover { color:#e0b778; text-decoration:underline; }
+.footer-contact { line-height:2; }
+.footer-contact a { color:#e0b778; text-decoration:none; }
+.footer-contact a:hover { color:#f8f0df; text-decoration:underline; }
 .footer-right { text-align:right; }
 .modal { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:25px; }
 .modal-backdrop { position:absolute; inset:0; background:rgba(22,20,16,.65); backdrop-filter:blur(4px); }
